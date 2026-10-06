@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XROBOTS — AI Premium System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;800&family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --utama: #6366f1; --sekunder: #8b5cf6; --aksen: #ec4899;
+            --gelap: #0f0f23; --sedang: #1e1e3f; --terang: #e0e7ff; --emas: #fbbf24;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f0f23, #1a1a3a, #0f0f23);
+            min-height: 100vh; color: #fff; overflow-x: hidden;
+        }
+        h1, h2, h3, .judul { font-family: 'Orbitron', sans-serif; }
+        
+        .bintang { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+        .b {
+            position: absolute; width: 3px; height: 3px; background: #fff; border-radius: 50%;
+            animation: kedip 2s infinite;
+        }
+        @keyframes kedip {
+            0%,100% {opacity:.2; transform:scale(1);}
+            50% {opacity:1; transform:scale(1.5);}
+        }
+        
+        .layar-loading {
+            position: fixed; inset: 0; background: #000; z-index: 9999;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: opacity .8s, visibility .8s;
+        }
+        .layar-loading.sembunyi { opacity:0; visibility:hidden; }
+        .video-pembuka {
+            width: 300px; height: 300px; border-radius: 16px; overflow: hidden;
+            box-shadow: 0 0 40px var(--utama), 0 0 80px var(--sekunder); margin-bottom: 30px;
+        }
+        .video-pembuka video { width: 100%; height: 100%; object-fit: cover; }
+        .wadah-bar { width: 300px; height: 8px; background: rgba(255,255,255,.1); border-radius: 10px; overflow: hidden; }
+        .bar-isi {
+            height: 100%; width: 0;
+            background: linear-gradient(90deg, var(--utama), var(--sekunder), var(--aksen));
+            border-radius: 10px; transition: width .3s; box-shadow: 0 0 10px var(--utama);
+        }
+        .persen { margin-top: 10px; font-family: 'Orbitron'; color: var(--emas); }
+        
+        .logo {
+            width: 80px; height: 80px; border-radius: 50%; overflow: hidden;
+            border: 3px solid var(--emas); box-shadow: 0 0 20px var(--emas);
+        }
+        .logo img { width: 100%; height: 100%; object-fit: cover; }
+        
+        @keyframes masuk { from {opacity:0; transform:translateY(30px);} to {opacity:1; transform:translateY(0);} }
+        .masuk { animation: masuk .6s forwards; opacity:0; }
+        .tunda-1 { animation-delay: .1s; }
+        .tunda-2 { animation-delay: .2s; }
+        
+        .kartu {
+            background: rgba(30,30,63,.6); backdrop-filter: blur(10px);
+            border: 1px solid rgba(99,102,241,.3); border-radius: 16px; padding: 24px; transition: .3s;
+        }
+        .kartu:hover { border-color: var(--utama); transform: translateY(-5px); box-shadow: 0 10px 30px rgba(99,102,241,.2); }
+        
+        .btn {
+            padding: 12px 28px; border-radius: 12px; font-weight: 600; cursor: pointer;
+            transition: .3s; border: none; font-size: 1rem;
+        }
+        .btn-utama {
+            background: linear-gradient(135deg, var(--utama), var(--sekunder)); color: #fff;
+            box-shadow: 0 4px 15px rgba(99,102,241,.3);
+        }
+        .btn-utama:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(99,102,241,.4); }
+        .btn-emas { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #000; }
+        .btn-hijau { background: #10b981; color: #fff; }
+        .btn-hijau:hover { background: #059669; }
+        
+        .input {
+            width: 100%; padding: 14px 18px; background: rgba(255,255,255,.05);
+            border: 1px solid rgba(99,102,241,.3); border-radius: 12px; color: #fff;
+            font-size: 1rem; transition: .3s;
+        }
+        .input:focus { outline: none; border-color: var(--utama); box-shadow: 0 0 0 3px rgba(99,102,241,.2); }
+        .input:disabled { opacity:.5; cursor:not-allowed; }
+        
+        .nav-link { position: relative; }
+        .nav-link::after {
+            content:''; position:absolute; bottom:-4px; left:0; width:0; height:2px;
+            background: linear-gradient(90deg, var(--utama), var(--aksen)); transition: width .3s;
+        }
+        .nav-link:hover::after { width:100%; }
+        
+        .halaman { display: none; }
+        .halaman.aktif { display: block; animation: masuk .5s forwards; }
+        
+        .kunci {
+            background: rgba(239,68,68,.1); border: 1px solid rgba(239,68,68,.4);
+            border-radius: 12px; padding: 20px; text-align: center; margin-top: 20px;
+        }
+        .sedang-tulis { color: #9ca3af; font-style: italic; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: var(--utama); border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="bintang" id="bintang"></div>
+
+    <!-- Loading -->
+    <div class="layar-loading" id="layarLoading">
+        <div class="video-pembuka">
+            <video src="/storage/emulated/0/Download/anime.mp4" autoplay muted playsinline>Maaf, video tidak dapat dimainkan</video>
+        </div>
+        <h2 class="text-2xl font-bold mb-2" style="font-family:'Orbitron';color:var(--emas)">XROBOTS</h2>
+        <p class="text-gray-400 mb-4">Memuat Sistem Cerdas...</p>
+        <div class="wadah-bar"><div class="bar-isi" id="barMuat"></div></div>
+        <p class="persen" id="teksPersen">0%</p>
+    </div>
+
+    <div class="container mx-auto px-4 py-6 relative z-10" id="kontenUtama" style="opacity:0;transition:opacity 1s;">
+        
+        <!-- Navbar -->
+        <nav class="flex justify-between items-center mb-8">
+            <div class="flex items-center gap-3">
+                <div class="logo">
+                    <img src="/storage/emulated/0/Download/logo.jpg" alt="Logo" onerror="this.src='https://via.placeholder.com/80'">
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold" style="font-family:'Orbitron';color:var(--emas)">XROBOTS</h1>
+                    <p class="text-xs text-gray-400">AI • Google Gemini</p>
+                </div>
+            </div>
+            <div class="hidden md:flex items-center gap-6 text-sm">
+                <a href="#" class="nav-link hover:text-indigo-400" onclick="tampilHalaman('beranda')">Beranda</a>
+                <a href="#" class="nav-link hover:text-indigo-400" onclick="tampilHalaman('ai')">AI Chat</a>
+                <a href="#" class="nav-link hover:text-indigo-400" onclick="tampilHalaman('channel')">Saluran WA</a>
+                <a href="#" class="nav-link hover:text-yellow-400" id="menuAdmin" style="display:none" onclick="bukaAdmin()">Dashboard</a>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="text-right text-xs hidden sm:block">
+                    <p class="text-green-400" id="namaPengguna">Tamu</p>
+                    <p class="text-gray-400" id="waktuSekarang">--:--</p>
+                </div>
+                <button class="btn bg-red-600/20 text-red-400 border-none py-2 px-4 hidden" id="btnKeluar" onclick="keluar()">Keluar</button>
+            </div>
+        </nav>
+
+        <!-- BERANDA -->
+        <div class="halaman aktif" id="halBeranda">
+            <div class="max-w-2xl mx-auto text-center py-12 masuk tunda-1">
+                <h1 class="text-4xl md:text-6xl font-bold mb-6" style="font-family:'Orbitron'">
+                    <span style="color:var(--emas)">XROBOTS</span><br>
+                    <span class="text-indigo-300 text-2xl md:text-3xl">Sistem AI Google Gemini</span>
+                </h1>
+                <p class="text-gray-400 text-lg mb-8">Ditenagai Google Gemini — cerdas, akurat, cepat</p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                    <button class="btn btn-utama" onclick="tampilHalaman('login')">Masuk Sekarang</button>
+                    <button class="btn bg-transparent border border-indigo-500 text-indigo-300 hover:bg-indigo-500/20" onclick="tampilHalaman('daftar')">Daftar Akun</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- LOGIN -->
+        <div class="halaman" id="halLogin">
+            <div class="max-w-md mx-auto py-10 masuk">
+                <div class="kartu">
+                    <h2 class="text-2xl font-bold text-center mb-6" style="color:var(--emas)">MASUK AKUN</h2>
+                    <form onsubmit="masukAkun(event)">
+                        <div class="mb-4">
+                            <label class="block mb-2 text-sm text-gray-300">Nama Pengguna</label>
+                            <input type="text" id="user" class="input" placeholder="Masukkan nama pengguna" required>
+                        </div>
+                        <div class="mb-6">
+                            <label class="block mb-2 text-sm text-gray-300">Kata Sandi</label>
+                            <input type="password" id="pass" class="input" placeholder="Masukkan kata sandi" required>
+                        </div>
+                        <button type="submit" class="btn btn-utama w-full">Masuk</button>
+                    </form>
+                    <p class="text-center mt-4 text-sm text-gray-400">
+                        Belum punya akun? <a href="#" onclick="tampilHalaman('daftar')" class="text-indigo-400">Daftar di sini</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- DAFTAR -->
+        <div class="halaman" id="halDaftar">
+            <div class="max-w-md mx-auto py-10 masuk">
+                <div class="kartu">
+                    <h2 class="text-2xl font-bold text-center mb-6" style="color:var(--emas)">DAFTAR AKUN BARU</h2>
+                    <form onsubmit="daftarAkun(event)">
+                        <div class="mb-4">
+                            <label class="block mb-2 text-sm text-gray-300">Nama Pengguna</label>
+                            <input type="text" id="regUser" class="input" placeholder="Pilih nama pengguna" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block mb-2 text-sm text-gray-300">Nomor WhatsApp</label>
+                            <input type="tel" id="regWa" class="input" placeholder="Contoh: 08xxxxxxxxx" required>
+                        </div>
+                        <div class="mb-6">
+                            <label class="block mb-2 text-sm text-gray-300">Kata Sandi</label>
+                            <input type="password" id="regPass" class="input" placeholder="Buat kata sandi" required>
+                        </div>
+                        <button type="submit" class="btn btn-utama w-full">Daftar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI CHAT -->
+        <div class="halaman" id="halAI">
+            <div class="max-w-3xl mx-auto py-6 masuk">
+                <div class="kartu mb-4">
+                    <h2 class="text-xl font-bold mb-4" style="color:var(--emas)">🤖 XROBOTS — Google Gemini</h2>
+                    <div id="kotakPesan" class="h-96 overflow-y-auto p-4 bg-black/30 rounded-xl mb-4 border border-indigo-900/50">
+                        <p class="text-gray-500 text-center">Tanyakan apa saja kepada Gemini AI...</p>
+                    </div>
+                    
+                    <!-- Area Input -->
+                    <div id="areaKirim">
+                        <div class="flex gap-2">
+                            <input type="text" id="inputPertanyaan" class="input flex-1" placeholder="Ketik pertanyaanmu...">
+                            <button class="btn btn-utama" id="btnKirim" onclick="kirimPertanyaan()">Kirim</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Batas Habis -->
+                    <div id="batasHabis" class="kunci" style="display:none;">
+                        <i class="fa fa-lock text-3xl text-red-400 mb-3"></i>
+                        <h3 class="text-lg font-bold text-red-400 mb-2">Batas Percobaan Telah Habis</h3>
+                        <p class="text-gray-300 mb-4">Terima kasih sudah mencoba! Untuk melanjutkan akses penuh sistem AI ini, silakan hubungi pemilik melalui WhatsApp:</p>
+                        <button class="btn btn-hijau" onclick="hubungiPemilik()">
+                            <i class="fa fa-whatsapp mr-2"></i> Lanjutkan Akses Sekarang
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SALURAN WA -->
+        <div class="halaman" id="halChannel">
+            <div class="max-w-md mx-auto py-10 masuk">
+                <div class="kartu text-center">
+                    <h2 class="text-2xl font-bold mb-4" style="color:var(--emas)">📢 SALURAN WHATSAPP</h2>
+                    <p class="text-gray-300 mb-6">Dapatkan update, fitur baru, & tips eksklusif</p>
+                    <a href="https://whatsapp.com/channel/0029VbDH55OBadmaIDM3WX3o" target="_blank" 
+                       class="btn bg-green-600 hover:bg-green-500 text-white w-full inline-block text-center mb-6">
+                        <i class="fa fa-whatsapp mr-2"></i> Gabung Saluran Sekarang
+                    </a>
+                    <div class="border-t border-gray-700 pt-6 mt-4">
+                        <h3 class="text-lg font-semibold mb-3" style="color:var(--emas)">💎 LAYANAN VIP</h3>
+                        <p class="text-gray-300 mb-4">Akses fitur penuh, prioritas, & dukungan langsung</p>
+                        <button class="btn btn-emas w-full" onclick="isiPesanVip()">
+                            <i class="fa fa-crown mr-2"></i> Daftar VIP Sekarang
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const admin = { user: 'dyz1933', pass: 'ceoadi123' };
+        const nomorPemilik = '6283185020321';
+        const MAKS_PERCOBAAN = 5;
+        
+        // ✅ API KEY GEMINI SUDAH DIMASUKKAN
+        const API_KEY = "AQ.Ab8RN6IDPXJDs_OfYb9c1xmWXk6naC_25iCvJiFS40lUwQBhHA";
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${API_KEY}`;
+        
+        let penggunaTerdaftar = JSON.parse(localStorage.getItem('xrobots_pengguna') || '[]');
+        let penggunaAktif = null;
+
+        // Bintang & Loading
+        document.addEventListener('DOMContentLoaded', () => {
+            const bintangDiv = document.getElementById('bintang');
+            for(let i=0; i<60; i++) {
+                const b = document.createElement('div');
+                b.className = 'b';
+                b.style.left = Math.random()*100 + '%';
+                b.style.top = Math.random()*100 + '%';
+                bintangDiv.appendChild(b);
+            }
+            let persen = 0;
+            const bar = document.getElementById('barMuat');
+            const teksP = document.getElementById('teksPersen');
+            const interval = setInterval(() => {
+                persen += Math.floor(Math.random()*5) + 1;
+                if(persen >= 100) {
+                    persen = 100; clearInterval(interval);
+                    setTimeout(() => {
+                        document.getElementById('layarLoading').classList.add('sembunyi');
+                        document.getElementById('kontenUtama').style.opacity = '1';
+                        cekLogin();
+                    }, 500);
+                }
+                bar.style.width = persen + '%';
+                teksP.textContent = persen + '%';
+            }, 100);
+            setInterval(() => {
+                const d = new Date();
+                document.getElementById('waktuSekarang').textContent = 
+                    d.toLocaleDateString('id-ID') + ' • ' + d.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'});
+            }, 1000);
+        });
+
+        function tampilHalaman(nama) {
+            document.querySelectorAll('.halaman').forEach(h => h.classList.remove('aktif'));
+            const hal = document.getElementById('hal' + nama.charAt(0).toUpperCase() + nama.slice(1));
+            if(hal) hal.classList.add('aktif');
+        }
+
+        function bukaAdmin() {
+            if(penggunaAktif?.isAdmin) {
+                window.open('admin.html', '_blank');
+            } else {
+                alert('Silakan masuk sebagai admin terlebih dahulu!');
+                tampilHalaman('login');
+            }
+        }
+
+        function masukAkun(e) {
+            e.preventDefault();
+            const u = document.getElementById('user').value.trim();
+            const p = document.getElementById('pass').value.trim();
+            
+            if(u === admin.user && p === admin.pass) {
+                penggunaAktif = { nama: u, isAdmin: true, percobaan: 999 };
+                localStorage.setItem('xrobots_sesi', JSON.stringify(penggunaAktif));
+                setelahLogin();
+                return;
+            }
+            
+            const ketemu = penggunaTerdaftar.find(x => x.nama === u && x.sandi === p);
+            if(ketemu) {
+                penggunaAktif = { ...ketemu };
+                if(typeof penggunaAktif.percobaan === 'undefined') penggunaAktif.percobaan = MAKS_PERCOBAAN;
+                localStorage.setItem('xrobots_sesi', JSON.stringify(penggunaAktif));
+                setelahLogin();
+            } else {
+                alert('❌ Nama atau kata sandi salah!');
+            }
+        }
+
+        function daftarAkun(e) {
+            e.preventDefault();
+            const u = document.getElementById('regUser').value.trim();
+            const wa = document.getElementById('regWa').value.trim();
+            const p = document.getElementById('regPass').value.trim();
+            if(penggunaTerdaftar.find(x => x.nama === u)) {
+                alert('❌ Nama pengguna sudah dipakai!');
+                return;
+            }
+            penggunaTerdaftar.push({
+                nama: u, wa: wa, sandi: p, isVIP: false, diblokir: false,
+                percobaan: MAKS_PERCOBAAN, bergabung: new Date().toLocaleString('id-ID')
+            });
+            simpanPengguna();
+            alert('✅ Berhasil daftar! Silakan masuk.');
+            tampilHalaman('login');
+        }
+
+        function cekLogin() {
+            const sesi = localStorage.getItem('xrobots_sesi');
+            if(sesi) {
+                penggunaAktif = JSON.parse(sesi);
+                setelahLogin();
+            }
+        }
+
+        function setelahLogin() {
+            document.getElementById('namaPengguna').textContent = penggunaAktif.nama;
+            document.getElementById('btnKeluar').classList.remove('hidden');
+            if(penggunaAktif.isAdmin) {
+                document.getElementById('menuAdmin').style.display = 'block';
+            }
+            cekBatasPercobaan();
+            tampilHalaman('ai');
+        }
+
+        function keluar() {
+            localStorage.removeItem('xrobots_sesi');
+            penggunaAktif = null;
+            document.getElementById('namaPengguna').textContent = 'Tamu';
+            document.getElementById('btnKeluar').classList.add('hidden');
+            document.getElementById('menuAdmin').style.display = 'none';
+            tampilHalaman('beranda');
+        }
+
+        function cekBatasPercobaan() {
+            if(penggunaAktif?.isAdmin || penggunaAktif?.isVIP) {
+                document.getElementById('areaKirim').style.display = 'block';
+                document.getElementById('batasHabis').style.display = 'none';
+                document.getElementById('inputPertanyaan').disabled = false;
+                document.getElementById('btnKirim').disabled = false;
+                return;
+            }
+            
+            if(penggunaAktif?.percobaan <= 0) {
+                document.getElementById('areaKirim').style.display = 'none';
+                document.getElementById('batasHabis').style.display = 'block';
+            } else {
+                document.getElementById('areaKirim').style.display = 'block';
+                document.getElementById('batasHabis').style.display = 'none';
+                document.getElementById('inputPertanyaan').disabled = false;
+                document.getElementById('btnKirim').disabled = false;
+            }
+        }
+
+        function kurangiPercobaan() {
+            if(penggunaAktif?.isAdmin || penggunaAktif?.isVIP) return true;
+            if(!penggunaAktif || penggunaAktif.percobaan <= 0) return false;
+            
+            penggunaAktif.percobaan--;
+            localStorage.setItem('xrobots_sesi', JSON.stringify(penggunaAktif));
+            
+            const idx = penggunaTerdaftar.findIndex(x => x.nama === penggunaAktif.nama);
+            if(idx !== -1) {
+                penggunaTerdaftar[idx].percobaan = penggunaAktif.percobaan;
+                simpanPengguna();
+            }
+            
+            cekBatasPercobaan();
+            return true;
+        }
+
+        async function kirimPertanyaan() {
+            if(!kurangiPercobaan()) return;
+            
+            const pertanyaan = document.getElementById('inputPertanyaan').value.trim();
+            if(!pertanyaan) return;
+            
+            const kotak = document.getElementById('kotakPesan');
+            kotak.innerHTML += `<p class="text-right text-indigo-300 my-2"><b>Kamu:</b> ${pertanyaan}</p>`;
+            document.getElementById('inputPertanyaan').value = '';
+            
+            // Teks sedang menulis
+            const idTunggu = 'tunggu-' + Date.now();
+            kotak.innerHTML += `<p id="${idTunggu}" class="text-left sedang-tulis my-2"><b>🤖 Gemini:</b> Sedang berpikir...</p>`;
+            kotak.scrollTop = kotak.scrollHeight;
+            
+            try {
+                // Panggil API Gemini
+                const res = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: pertanyaan }] }]
+                    })
+                });
+                
+                const data = await res.json();
+                document.getElementById(idTunggu).remove();
+                
+                if(data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+                    const jawaban = data.candidates[0].content.parts[0].text;
+                    kotak.innerHTML += `<p class="text-left text-green-300 my-2"><b>🤖 Gemini:</b> ${jawaban}</p>`;
+                } else {
+                    kotak.innerHTML += `<p class="text-left text-red-300 my-2"><b>🤖 Gemini:</b> Maaf, saya tidak dapat menjawab saat ini. Coba lagi nanti.</p>`;
+                    console.log('Respon API:', data);
+                }
+            } catch (err) {
+                document.getElementById(idTunggu).remove();
+                kotak.innerHTML += `<p class="text-left text-red-300 my-2"><b>🤖 Gemini:</b> Terjadi kesalahan: ${err.message}</p>`;
+            }
+            
+            kotak.scrollTop = kotak.scrollHeight;
+        }
+
+        function hubungiPemilik() {
+            const pesan = encodeURIComponent(
+`Halo! Saya ingin melanjutkan akses ke sistem AI XROBOTS 🤖
+
+Nama: ${penggunaAktif?.nama || 'Pengguna'}
+Memperpanjang akses setelah masa percobaan habis.
+
+Terima kasih 🙏`
+            );
+            window.open(`https://wa.me/${nomorPemilik}?text=${pesan}`, '_blank');
+        }
+
+        function isiPesanVip() {
+            const pesan = encodeURIComponent(
+`Halo! Saya ingin mendaftar layanan VIP XROBOTS 🎉
+
+Nama: ${penggunaAktif?.nama || 'Belum login'}
+Mau bergabung sebagai anggota VIP!
+
+Terima kasih 🙏`
+            );
+            window.open(`https://wa.me/${nomorPemilik}?text=${pesan}`, '_blank');
+        }
+
+        function simpanPengguna() {
+            localStorage.setItem('xrobots_pengguna', JSON.stringify(penggunaTerdaftar));
+        }
+    </script>
+</body>
+</html>
